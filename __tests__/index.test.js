@@ -1,7 +1,7 @@
 import nock from 'nock';
 import { fileURLToPath } from 'url';
 import path from 'path';
-import os from 'os';
+import os, { tmpdir } from 'os';
 import fs from 'fs';
 import pageLoad from '../src/index.js';
 
@@ -16,27 +16,32 @@ const pageLoader = pageLoad();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const tempFilePath = path.join(os.tmpdir());
+const getFixturePath = (filename) => path.join(__dirname, '..', '__fixtures__', filename);
 
-const getFixturePath = (fpath) => path.join(__dirname, '..', '__fixtures__', fpath);
+let tempDirName;
+let data;
+
+nock.disableNetConnect();
 
 beforeAll(async () => {
-
+  data = await fsp.readFile(getFixturePath);
 })
 
 beforeEach(async () => {
-  await fs.mkdtemp(path.join(os.tmpdir(), 'page-loader-'));
+  tempDirName = await fs.mkdtemp(path.join(os.tmpdir(), 'page-loader-'));
+  console.log(tempDirName, 'TEMPDIRNAME')
 })
 
-const { URL } = url;
-console.log(URL)
-const testUrl = new URL('https://ru.hexlet.io/courses');
-
-nock.disableNetConnect();
+const testUrl = 'https://ru.hexlet.io/courses';
+const newFileName = 'ru-hexlet-io-courses.html';
 
 test('loadPage', async () => {
   nock(/ru\.hexlet\.io/)
     .get(/\/courses/)
-    .reply(200, content)
-  
-  expect(pageLoader(testUrl.href)).toEqual('/var/tmp/ru-hexlet-io-courses.html');
+    .reply(200, data);
+
+  await pageLoader(testUrl, tempFilePath);
+  //const expectedData = await fsp.readFile(path.join(tempFilePath, newFileName), 'utf-8');
+  //expect(expectedData).toEqual('/var/tmp/ru-hexlet-io-courses.html');
 })
